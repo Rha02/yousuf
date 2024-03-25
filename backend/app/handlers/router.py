@@ -1,6 +1,7 @@
 from fastapi import APIRouter
+from app.repository.repository import DatabaseRepository
 
-def create_router(db: any):
+def create_router(db: DatabaseRepository):
     """Create an instance of the FastAPI application"""
     router = APIRouter()
 
@@ -16,7 +17,7 @@ def create_router(db: any):
     async def logout():
         return {"message": "Logout"}
 
-    @router.post("/user")
+    @router.get("/user")
     async def user():
         return {"message": "User"}
 

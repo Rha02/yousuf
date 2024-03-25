@@ -5,6 +5,7 @@ from app.handlers.router import create_router
 from app.driver.driver import MongoDB
 from dotenv import load_dotenv
 import os
+from app.repository.mongodb_repo import MongoDBRepository
 
 load_dotenv()
 
@@ -15,6 +16,8 @@ if (mongodb_uri is None):
     exit(1)
 
 dbconn = MongoDB(os.getenv("MONGODB_URI"))
+
+dbrepo = MongoDBRepository(dbconn)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,7 +40,7 @@ def create_app():
         print(e)
         exit(1)
 
-    router = create_router(dbconn.db)
+    router = create_router(dbrepo)
     
     app.include_router(router) 
 
@@ -47,5 +50,4 @@ app = create_app()
 
 def start():
     """Start server with 'poetry run start' command"""
-    print("SERVER STARTED")
     uvicorn.run("app.main:app", host="localhost", port=8000, reload=True)
