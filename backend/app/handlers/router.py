@@ -17,7 +17,7 @@ def create_router(app: AppConfig):
             "message": "Login Successful"
         }
 
-        res = Response(
+        return Response(
             content=json.dumps(body),
             status_code=200,
             headers={
@@ -25,7 +25,6 @@ def create_router(app: AppConfig):
                 "Content-Type": "application/json"
             }
         )
-        return res
 
     @router.post("/register")
     async def register(
@@ -34,13 +33,20 @@ def create_router(app: AppConfig):
         email: str = Form(),
         password: str = Form()
     ):
+        auth_token = app.authrepo.create_token({
+            "email": email
+        })
 
-        return {
-            "first_name": first_name,
-            "last_name": last_name,
-            "email": email,
-            "password": password
-        }
+        return Response(
+            content=json.dumps({
+                "message": "User registered successfully"
+            }),
+            status_code=201,
+            headers={
+                "Authorization": "Bearer " + auth_token,
+                "Content-Type": "application/json"
+            }
+        )
 
     @router.post("/logout")
     async def logout():
