@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.handlers.router import create_router
 from app.driver.driver import MongoDB
 from dotenv import load_dotenv
@@ -42,6 +43,15 @@ def create_app():
         print("Failed to connect to MongoDB")
         print(e)
         exit(1)
+
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"]
+    )
 
     # Create app configuration
     jwt_secret = os.getenv("JWT_SECRET")
