@@ -6,6 +6,8 @@ from app.driver.driver import MongoDB
 from dotenv import load_dotenv
 import os
 from app.repository.mongodb_repo import MongoDBRepository
+from app.services.auth_repo.jwt_repo import JWTRepository
+from app.config import AppConfig
 
 load_dotenv()
 
@@ -40,7 +42,22 @@ def create_app():
         print(e)
         exit(1)
 
-    router = create_router(dbrepo)
+    # Create app configuration
+    jwt_secret = os.getenv("JWT_SECRET")
+    if (jwt_secret is None):
+        print("JWT_SECRET not found in environment variables")
+        exit(1)
+
+    jwt_algorithm = os.getenv("JWT_ALGORITHM")
+    if (jwt_algorithm is None):
+        print("JWT_ALGORITHM not found in environment variables")
+        exit(1)
+
+    authrepo = JWTRepository(jwt_secret, jwt_algorithm)
+
+    appConfig = AppConfig(dbrepo, authrepo)
+
+    router = create_router(appConfig)
     
     app.include_router(router) 
 
