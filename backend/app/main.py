@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import os
 from app.repository.mongodb_repo import MongoDBRepository
 from app.services.auth_repo.jwt_repo import JWTRepository
-from app.services.hash_repo.test_repo import TestHashRepository
+from app.services.hash_repo.bcrypt_repo import BcryptHashRepository
 from app.config import AppConfig
 
 load_dotenv()
@@ -70,7 +70,7 @@ def create_app():
     authrepo = JWTRepository(jwt_secret, jwt_algorithm)
 
     # Create a hash function repository
-    hashrepo = TestHashRepository()
+    hashrepo = BcryptHashRepository()
 
     # Encapsulate services in an AppConfig object
     appConfig = AppConfig(dbrepo, authrepo, hashrepo)
