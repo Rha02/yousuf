@@ -1,6 +1,6 @@
 from .repository import DatabaseRepository
 from app.models.user import User
-from app.driver.driver import MongoDB
+from driver.driver import MongoDB
 
 class MongoDBRepository(DatabaseRepository):
     """MongoDB implementation of a database repository"""

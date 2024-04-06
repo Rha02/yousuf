@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.handlers.router import create_router
-from app.driver.driver import MongoDB
+from driver.driver import MongoDB
 from dotenv import load_dotenv
 import os
 from app.repository.mongodb_repo import MongoDBRepository
@@ -19,7 +19,9 @@ if (mongodb_uri is None):
     print("MONGODB_URI not found in environment variables")
     exit(1)
 
-dbconn = MongoDB(os.getenv("MONGODB_URI"))
+dbname = os.getenv("DB_NAME")
+
+dbconn = MongoDB(mongodb_uri, dbname)
 
 dbrepo = MongoDBRepository(dbconn)
 
