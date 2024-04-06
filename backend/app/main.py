@@ -1,12 +1,14 @@
 from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.handlers.router import create_router
-from app.driver.driver import MongoDB
+from driver.driver import MongoDB
 from dotenv import load_dotenv
 import os
 from app.repository.mongodb_repo import MongoDBRepository
 from app.services.auth_repo.jwt_repo import JWTRepository
+from app.services.hash_repo.test_repo import TestHashRepository
 from app.config import AppConfig
 
 load_dotenv()
@@ -17,7 +19,9 @@ if (mongodb_uri is None):
     print("MONGODB_URI not found in environment variables")
     exit(1)
 
-dbconn = MongoDB(os.getenv("MONGODB_URI"))
+dbname = os.getenv("DB_NAME")
+
+dbconn = MongoDB(mongodb_uri, dbname)
 
 dbrepo = MongoDBRepository(dbconn)
 
@@ -42,6 +46,15 @@ def create_app():
         print(e)
         exit(1)
 
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"]
+    )
+
     # Create app configuration
     jwt_secret = os.getenv("JWT_SECRET")
     if (jwt_secret is None):
@@ -53,12 +66,17 @@ def create_app():
         print("JWT_ALGORITHM not found in environment variables")
         exit(1)
 
+    # Create an authentication token repository
     authrepo = JWTRepository(jwt_secret, jwt_algorithm)
 
-    appConfig = AppConfig(dbrepo, authrepo)
+    # Create a hash function repository
+    hashrepo = TestHashRepository()
 
+    # Encapsulate services in an AppConfig object
+    appConfig = AppConfig(dbrepo, authrepo, hashrepo)
+
+    # Create router and attach router to the app
     router = create_router(appConfig)
-    
     app.include_router(router) 
 
     return app

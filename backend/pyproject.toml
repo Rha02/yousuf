@@ -21,3 +21,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 start="app.main:start"
+setupdb="dbinit.setup_mongodb:main"
