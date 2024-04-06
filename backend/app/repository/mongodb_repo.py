@@ -9,7 +9,15 @@ class MongoDBRepository(DatabaseRepository):
         self.db = client.db
 
     def get_user_by_email(self, email: str) -> User:
-        return self.db.users.find_one({"email": email})
+        res = self.db.users.find_one({"email": email})
+        user = User(
+            id=str(res["_id"]),
+            email=res["email"],
+            password=res["password"],
+            first_name=res["first_name"],
+            last_name=res["last_name"]
+        )
+        return user
     
     def get_user_by_id(self, user_id: int) -> User:
         return self.db.users.find_one({"id": user_id})

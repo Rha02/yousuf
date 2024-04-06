@@ -2,6 +2,7 @@ import json
 from typing import Annotated
 from fastapi import APIRouter, File, Form, Response, UploadFile, Request
 from app.config import AppConfig
+from app.models.user import User
 
 def create_router(app: AppConfig):
     """Create an instance of the FastAPI application"""
@@ -9,6 +10,29 @@ def create_router(app: AppConfig):
 
     @router.post("/login")
     async def login(email: str = Form(), password: str = Form()):
+        user = app.db.get_user_by_email(email)
+        if not user:
+            return Response(
+                content=json.dumps({
+                    "error": "User not found"
+                }),
+                status_code=404,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
+        if not app.hashrepo.compare(password, user.password):
+            return Response(
+                content=json.dumps({
+                    "error": "Incorrect password"
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+
         auth_token = app.authrepo.create_token({
             "email": email
         })
@@ -33,6 +57,39 @@ def create_router(app: AppConfig):
         email: str = Form(),
         password: str = Form()
     ):
+        try:
+            hashed_password = app.hashrepo.hash(password)
+        except Exception as e:
+            return Response(
+                content=json.dumps({
+                    "error": str(e)
+                }),
+                status_code=500,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
+        new_user = User(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=hashed_password
+        )
+
+        try:
+            app.db.create_user(new_user)
+        except Exception as e:
+            return Response(
+                content=json.dumps({
+                    "error": str(e)
+                }),
+                status_code=500,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+
         auth_token = app.authrepo.create_token({
             "email": email
         })
@@ -64,7 +121,11 @@ def create_router(app: AppConfig):
         except Exception as e:
             return {"error": str(e)}
 
-        return payload
+        user_email = payload.get("email")
+
+        user = app.db.get_user_by_email(user_email)
+
+        return user
     
     @router.post("/upload_text")
     async def upload_file(
