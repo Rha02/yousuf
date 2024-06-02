@@ -9,6 +9,7 @@ import os
 from app.repository.mongodb_repo import MongoDBRepository
 from app.services.auth_repo.jwt_repo import JWTRepository
 from app.services.hash_repo.bcrypt_repo import BcryptHashRepository
+from app.services.llm_repo.gpt_repo import GPTRepository
 from app.config import AppConfig
 
 load_dotenv()
@@ -66,14 +67,21 @@ def create_app():
         print("JWT_ALGORITHM not found in environment variables")
         exit(1)
 
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if (openai_api_key is None):
+        print("OPENAI_API_KEY not found in environment variables")
+        exit(1)
+
     # Create an authentication token repository
     authrepo = JWTRepository(jwt_secret, jwt_algorithm)
 
     # Create a hash function repository
     hashrepo = BcryptHashRepository()
 
+    llmrepo = GPTRepository(openai_api_key)
+
     # Encapsulate services in an AppConfig object
-    appConfig = AppConfig(dbrepo, authrepo, hashrepo)
+    appConfig = AppConfig(dbrepo, authrepo, hashrepo, llmrepo)
 
     # Create router and attach router to the app
     router = create_router(appConfig)

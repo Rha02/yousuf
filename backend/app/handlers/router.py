@@ -149,4 +149,24 @@ def create_router(app: AppConfig):
             "file_extension": file_extension
         }
 
+    @router.post("/message")
+    async def message(request: Request):
+        """Send a message to the LLM"""
+        # get authentication token
+        auth_token = request.headers.get("Authorization")
+        if not auth_token:
+            return {"error": "Authentication token is required"}
+        
+        # get the message from the request body
+        body = await request.form()
+
+        prompt = body.get("prompt")
+        if not prompt:
+            return {"error": "Prompt is required"}
+
+        # send the message to the LLM
+        response = app.llmrepo.messageLLM("chat_id", prompt)
+
+        return {"message": response}
+
     return router
