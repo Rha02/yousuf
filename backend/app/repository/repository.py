@@ -6,15 +6,15 @@ class DatabaseRepository(ABC):
     """Abstract class for database repository"""
 
     @abstractmethod
-    def get_user_by_email(self, email: str) -> User:
+    def get_user_by_email(self, email: str) -> User | None:
         pass
 
     @abstractmethod
-    def get_user_by_id(self, user_id: str) -> User:
+    def get_user_by_id(self, user_id: str) -> User | None:
         pass
 
     @abstractmethod
-    def create_user(self, user: User) -> User:
+    def create_user(self, user: User) -> User | None:
         pass
 
     @abstractmethod
@@ -22,5 +22,5 @@ class DatabaseRepository(ABC):
         pass
 
     @abstractmethod
-    def create_chat(self, chat: Chat) -> Chat:
+    def create_chat(self, chat: Chat) -> Chat | None:
         pass

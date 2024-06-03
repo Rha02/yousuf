@@ -9,8 +9,11 @@ class MongoDBRepository(DatabaseRepository):
     def __init__(self, client: MongoDB):
         self.db = client.db
 
-    def get_user_by_email(self, email: str) -> User:
+    def get_user_by_email(self, email: str) -> User | None:
         res = self.db.users.find_one({"email": email})
+        if not res:
+            return None
+        
         user = User(
             id=str(res["_id"]),
             email=res["email"],
@@ -20,11 +23,23 @@ class MongoDBRepository(DatabaseRepository):
         )
         return user
     
-    def get_user_by_id(self, user_id: str) -> User:
-        return self.db.users.find_one({"id": user_id})
+    def get_user_by_id(self, user_id: str) -> User | None:
+        res = self.db.users.find_one({"_id": user_id})
+        if not res:
+            return None
+        
+        user = User(
+            id=str(res["_id"]),
+            email=res["email"],
+            password=res["password"],
+            first_name=res["first_name"],
+            last_name=res["last_name"]
+        )
+        return user
     
-    def create_user(self, user: User) -> User:
-        self.db.users.insert_one(user.model_dump())
+    def create_user(self, user: User) -> User | None:
+        res = self.db.users.insert_one(user.model_dump())
+        user.id = str(res.inserted_id)
         return user
     
     def get_chats(self, user_id: str) -> list[Chat]:
@@ -40,7 +55,7 @@ class MongoDBRepository(DatabaseRepository):
         
         return chats
     
-    def create_chat(self, chat: Chat) -> Chat:
+    def create_chat(self, chat: Chat) -> Chat | None:
         res = self.db.chats.insert_one(chat.model_dump())
         chat.id = str(res.inserted_id)
         return chat

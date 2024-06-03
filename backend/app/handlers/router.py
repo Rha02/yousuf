@@ -116,9 +116,10 @@ def create_router(app: AppConfig):
     @router.get("/user")
     async def user(request: Request):
         auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return {"error": "Invalid authorization header"}
+        
         auth_token = auth_header.split(" ")[1]
-        if not auth_token:
-            return {"error": "Authentication token is required"}
         
         try:
             payload = app.authrepo.parse_token(auth_token)
@@ -138,9 +139,11 @@ def create_router(app: AppConfig):
     ):
         """Upload a text file to the server"""
         # get authentication token
-        auth_token = request.headers.get("Authorization")
-        if not auth_token:
-            return {"error": "Authentication token is required"}
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return {"error": "Invalid authorization header value"}
+        
+        auth_token = auth_header.split(" ")[1]
 
         # get the file name
         file_name = file.filename
@@ -158,9 +161,10 @@ def create_router(app: AppConfig):
         """Get the list of chats"""
         # get authentication token
         auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return {"error": "Invalid authorization header"}
+        
         auth_token = auth_header.split(" ")[1]
-        if not auth_token:
-            return {"error": "Authentication token is required"}
         
         # get the user's id from the token
         try:
@@ -179,9 +183,10 @@ def create_router(app: AppConfig):
         """Create a new chat"""
         # get authentication token
         auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return {"error": "Invalid authorization header"}
+        
         auth_token = auth_header.split(" ")[1]
-        if not auth_token:
-            return {"error": "Authentication token is required"}
         
         try:
             payload = app.authrepo.parse_token(auth_token)
@@ -211,9 +216,10 @@ def create_router(app: AppConfig):
         """Send a message to the LLM"""
         # get authentication token
         auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return {"error": "Invalid authorization header"}
+        
         auth_token = auth_header.split(" ")[1]
-        if not auth_token:
-            return {"error": "Authentication token is required"}
         
         # get the message from the request body
         body = await request.form()
