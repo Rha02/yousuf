@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, File, Form, Response, UploadFile, Request
 from app.config import AppConfig
 from app.models.user import User
+from app.models.chat import Chat
 
 def create_router(app: AppConfig):
     """Create an instance of the FastAPI application"""
@@ -34,6 +35,7 @@ def create_router(app: AppConfig):
             )
 
         auth_token = app.authrepo.create_token({
+            "id": user.id,
             "email": email
         })
 
@@ -79,7 +81,7 @@ def create_router(app: AppConfig):
         )
 
         try:
-            app.db.create_user(new_user)
+            new_user = app.db.create_user(new_user)
         except Exception as e:
             return Response(
                 content=json.dumps({
@@ -92,6 +94,7 @@ def create_router(app: AppConfig):
             )
 
         auth_token = app.authrepo.create_token({
+            "id": new_user.id,
             "email": email
         })
 
@@ -149,11 +152,66 @@ def create_router(app: AppConfig):
             "file_extension": file_extension
         }
 
-    @router.post("/message")
-    async def message(request: Request):
+
+    @router.get("/chats")
+    async def chats(request: Request):
+        """Get the list of chats"""
+        # get authentication token
+        auth_header = request.headers.get("Authorization")
+        auth_token = auth_header.split(" ")[1]
+        if not auth_token:
+            return {"error": "Authentication token is required"}
+        
+        # get the user's id from the token
+        try:
+            payload = app.authrepo.parse_token(auth_token)
+        except Exception as e:
+            return {"error": str(e)}
+        
+        user_id = payload.get("id")
+
+        chats = app.db.get_chats(user_id)
+
+        return chats
+
+    @router.post("/chats")
+    async def create_chat(request: Request):
+        """Create a new chat"""
+        # get authentication token
+        auth_header = request.headers.get("Authorization")
+        auth_token = auth_header.split(" ")[1]
+        if not auth_token:
+            return {"error": "Authentication token is required"}
+        
+        try:
+            payload = app.authrepo.parse_token(auth_token)
+        except Exception as e:
+            return {"error": str(e)}
+        
+        user_id = payload.get("id")
+        print(payload)
+        
+        # get the chat title from the request body
+        body = await request.form()
+        title = body.get("title")
+        if not title:
+            return {"error": "Title is required"}
+
+        # create the chat
+        chat = app.db.create_chat(Chat(
+            id="",
+            user_id=user_id,
+            title=title
+        ))
+
+        return chat
+
+    @router.post("/chats/{chat_id}/message")
+    async def message(chat_id: str, request: Request):
         """Send a message to the LLM"""
         # get authentication token
-        auth_token = request.headers.get("Authorization")
+        auth_header = request.headers.get("Authorization")
+        auth_token = auth_header.split(" ")[1]
         if not auth_token:
             return {"error": "Authentication token is required"}
         
@@ -164,8 +222,10 @@ def create_router(app: AppConfig):
         if not prompt:
             return {"error": "Prompt is required"}
 
+        print("Chat ID: ", chat_id)
+
         # send the message to the LLM
-        response = app.llmrepo.messageLLM("chat_id", prompt)
+        response = app.llmrepo.messageLLM(chat_id, prompt)
 
         return {"message": response}
 

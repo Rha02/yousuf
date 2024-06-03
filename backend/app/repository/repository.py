@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from app.models.user import User
+from app.models.chat import Chat
 
 class DatabaseRepository(ABC):
     """Abstract class for database repository"""
@@ -9,9 +10,17 @@ class DatabaseRepository(ABC):
         pass
 
     @abstractmethod
-    def get_user_by_id(self, user_id: int) -> User:
+    def get_user_by_id(self, user_id: str) -> User:
         pass
 
     @abstractmethod
     def create_user(self, user: User) -> User:
+        pass
+
+    @abstractmethod
+    def get_chats(self, user_id: str) -> list[Chat]:
+        pass
+
+    @abstractmethod
+    def create_chat(self, chat: Chat) -> Chat:
         pass
