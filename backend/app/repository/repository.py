@@ -22,5 +22,9 @@ class DatabaseRepository(ABC):
         pass
 
     @abstractmethod
+    def get_chat_by_id(self, chat_id: str) -> Chat | None:
+        pass
+
+    @abstractmethod
     def create_chat(self, chat: Chat) -> Chat | None:
         pass

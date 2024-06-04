@@ -2,6 +2,7 @@ from .repository import DatabaseRepository
 from app.models.user import User
 from app.models.chat import Chat
 from driver.driver import MongoDB
+from bson import ObjectId
 
 class MongoDBRepository(DatabaseRepository):
     """MongoDB implementation of a database repository"""
@@ -24,7 +25,7 @@ class MongoDBRepository(DatabaseRepository):
         return user
     
     def get_user_by_id(self, user_id: str) -> User | None:
-        res = self.db.users.find_one({"_id": user_id})
+        res = self.db.users.find_one({"_id": ObjectId(user_id)})
         if not res:
             return None
         
@@ -54,6 +55,18 @@ class MongoDBRepository(DatabaseRepository):
             ))
         
         return chats
+    
+    def get_chat_by_id(self, chat_id: str) -> Chat | None:
+        res = self.db.chats.find_one({"_id": ObjectId(chat_id)})
+        if not res:
+            return None
+        
+        chat = Chat(
+            id=str(res["_id"]),
+            user_id=res["user_id"],
+            title=res["title"]
+        )
+        return chat
     
     def create_chat(self, chat: Chat) -> Chat | None:
         res = self.db.chats.insert_one(chat.model_dump())
