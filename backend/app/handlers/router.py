@@ -116,18 +116,45 @@ def create_router(app: AppConfig):
     @router.get("/user")
     async def user(request: Request):
         auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return Response(
+                content=json.dumps({
+                    "error": "Invalid authorization header"
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
         auth_token = auth_header.split(" ")[1]
-        if not auth_token:
-            return {"error": "Authentication token is required"}
         
         try:
             payload = app.authrepo.parse_token(auth_token)
         except Exception as e:
-            return {"error": str(e)}
+            return Response(
+                content=json.dumps({
+                    "error": str(e)
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
 
         user_email = payload.get("email")
 
         user = app.db.get_user_by_email(user_email)
+        if not user:
+            return Response(
+                content=json.dumps({
+                    "error": "User not found"
+                }),
+                status_code=404,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
 
         return user
     
@@ -138,9 +165,19 @@ def create_router(app: AppConfig):
     ):
         """Upload a text file to the server"""
         # get authentication token
-        auth_token = request.headers.get("Authorization")
-        if not auth_token:
-            return {"error": "Authentication token is required"}
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return Response(
+                content=json.dumps({
+                    "error": "Invalid authorization header"
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
+        auth_token = auth_header.split(" ")[1]
 
         # get the file name
         file_name = file.filename
@@ -158,15 +195,32 @@ def create_router(app: AppConfig):
         """Get the list of chats"""
         # get authentication token
         auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return Response(
+                content=json.dumps({
+                    "error": "Invalid authorization header"
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
         auth_token = auth_header.split(" ")[1]
-        if not auth_token:
-            return {"error": "Authentication token is required"}
         
         # get the user's id from the token
         try:
             payload = app.authrepo.parse_token(auth_token)
         except Exception as e:
-            return {"error": str(e)}
+            return Response(
+                content=json.dumps({
+                    "error": str(e)
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
         
         user_id = payload.get("id")
 
@@ -179,17 +233,45 @@ def create_router(app: AppConfig):
         """Create a new chat"""
         # get authentication token
         auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return Response(
+                content=json.dumps({
+                    "error": "Invalid authorization header"
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
         auth_token = auth_header.split(" ")[1]
-        if not auth_token:
-            return {"error": "Authentication token is required"}
         
         try:
             payload = app.authrepo.parse_token(auth_token)
         except Exception as e:
-            return {"error": str(e)}
+            return Response(
+                content=json.dumps({
+                    "error": str(e)
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
         
         user_id = payload.get("id")
-        print(payload)
+        # Check if the user exists
+        user = app.db.get_user_by_id(user_id)
+        if not user:
+            return Response(
+                content=json.dumps({
+                    "error": "User not found"
+                }),
+                status_code=404,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
         
         # get the chat title from the request body
         body = await request.form()
@@ -204,6 +286,17 @@ def create_router(app: AppConfig):
             title=title
         ))
 
+        if not chat:
+            return Response(
+                content=json.dumps({
+                    "error": "Failed to create chat"
+                }),
+                status_code=500,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+
         return chat
 
     @router.post("/chats/{chat_id}/message")
@@ -211,18 +304,72 @@ def create_router(app: AppConfig):
         """Send a message to the LLM"""
         # get authentication token
         auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return Response(
+                content=json.dumps({
+                    "error": "Invalid authorization header"
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
         auth_token = auth_header.split(" ")[1]
-        if not auth_token:
-            return {"error": "Authentication token is required"}
+
+        try:
+            payload = app.authrepo.parse_token(auth_token)
+        except Exception as e:
+            return Response(
+                content=json.dumps({
+                    "error": str(e)
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
+        user_id = payload.get("id")
+
+        # Check if chat's user_id matches the user_id
+        chat = app.db.get_chat_by_id(chat_id)
+        if not chat:
+            return Response(
+                content=json.dumps({
+                    "error": "Chat not found"
+                }),
+                status_code=404,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
+        if chat.user_id != user_id:
+            return Response(
+                content=json.dumps({
+                    "error": "Unauthorized"
+                }),
+                status_code=403,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
         
         # get the message from the request body
         body = await request.form()
-
         prompt = body.get("prompt")
         if not prompt:
-            return {"error": "Prompt is required"}
-
-        print("Chat ID: ", chat_id)
+            return Response(
+                content=json.dumps({
+                    "error": "Prompt is required"
+                }),
+                status_code=400,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            
+            )
 
         # send the message to the LLM
         response = app.llmrepo.messageLLM(chat_id, prompt)
