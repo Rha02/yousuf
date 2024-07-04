@@ -78,7 +78,7 @@ def create_app():
     # Create a hash function repository
     hashrepo = BcryptHashRepository()
 
-    llmrepo = GPTRepository(openai_api_key)
+    llmrepo = GPTRepository(openai_api_key, db_conn=mongodb_uri, db_name=dbname)
 
     # Encapsulate services in an AppConfig object
     appConfig = AppConfig(dbrepo, authrepo, hashrepo, llmrepo)
