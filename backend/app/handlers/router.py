@@ -5,6 +5,8 @@ from app.config import AppConfig
 from app.models.user import User
 from app.models.chat import Chat
 
+max_messages_limit = 50
+
 def create_router(app: AppConfig):
     """Create an instance of the FastAPI application"""
     router = APIRouter()
@@ -298,6 +300,83 @@ def create_router(app: AppConfig):
             )
 
         return chat
+    
+    @router.get("/chats/{chat_id}")
+    async def get_messages(chat_id: str, request: Request):
+        """Get message/conversation history for a chat"""
+        # get authentication token
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return Response(
+                content=json.dumps({
+                    "error": "Invalid authorization header"
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
+        auth_token = auth_header.split(" ")[1]
+
+        try:
+            payload = app.authrepo.parse_token(auth_token)
+        except Exception as e:
+            return Response(
+                content=json.dumps({
+                    "error": str(e)
+                }),
+                status_code=401,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
+        user_id = payload.get("id")
+
+        # Check if chat's user_id matches the user_id
+        chat = app.db.get_chat_by_id(chat_id)
+        if not chat:
+            return Response(
+                content=json.dumps({
+                    "error": "Chat not found"
+                }),
+                status_code=404,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
+        if chat.user_id != user_id:
+            return Response(
+                content=json.dumps({
+                    "error": "Unauthorized"
+                }),
+                status_code=403,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            )
+        
+        # get query parameters
+        limit = request.query_params.get("limit", 10)
+        try:
+            limit = int(limit)
+        except ValueError:
+            limit = 10
+
+        if limit < 1 or limit > max_messages_limit:
+            limit = 10
+        
+        offset = request.query_params.get("offset", 0)
+        try:
+            offset = int(offset)
+        except ValueError:
+            offset = 0
+
+        messages = app.db.get_messages(chat_id, limit, offset)
+
+        return messages
 
     @router.post("/chats/{chat_id}/message")
     async def message(chat_id: str, request: Request):

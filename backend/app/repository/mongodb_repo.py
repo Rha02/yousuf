@@ -1,3 +1,5 @@
+import json
+from app.models.message import History, Message, MessageData
 from .repository import DatabaseRepository
 from app.models.user import User
 from app.models.chat import Chat
@@ -72,3 +74,20 @@ class MongoDBRepository(DatabaseRepository):
         res = self.db.chats.insert_one(chat.model_dump())
         chat.id = str(res.inserted_id)
         return chat
+    
+    def get_messages(self, chat_id: str, limit: int, offset: int) -> list[Message]:
+        res = self.db.message_histories.find({"SessionId": chat_id}).sort("_id", -1).skip(offset).limit(limit)
+
+        print(limit, offset)
+
+        messages = []
+        for message in res:
+            history_json = json.loads(message["History"])
+            history = History(**history_json)
+            messages.append(Message(
+                id=str(message["_id"]),
+                session_id=message["SessionId"],
+                history=history
+            ))
+
+        return messages
