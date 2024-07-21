@@ -47,7 +47,15 @@ curl --location 'https://yousuf195.azurewebsites.net/chats' \
 --form 'title="<chat title>"'
 ```
 
-### Send Promot
+#### Get Messages
+Get a list of messages from the chat. Use this route to fetch conversation history<br>
+`GET`: `/chats/<chat_id>`
+```sh
+curl --location 'https://yousuf195.azurewebsites.net/chats/6685e575b659017d1370b735?limit=16&offset=0' \
+--header 'Authorization: Bearer <token>'
+```
+
+### Send Prompt
 `POST`: `/chats/<chat_id>/message`
 ```sh
 curl --location 'https://yousuf195.azurewebsites.net/chats/6685e575b659017d1370b735/message' \
