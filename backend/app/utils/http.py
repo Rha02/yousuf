@@ -19,6 +19,8 @@ def getAuthToken(request: Request) -> str:
 
 def getIntQueryParam(request: Request, param: str, defaultInt: int) -> int:
     res = request.query_params.get(param)
+    if not res:
+        return defaultInt
     try:
         res = int(res)
     except ValueError:
