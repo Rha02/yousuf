@@ -213,20 +213,11 @@ def create_router(app: AppConfig):
             return httpUtils.ErrorResponses.FORBIDDEN
         
         # get query parameters
-        limit = request.query_params.get("limit", 10)
-        try:
-            limit = int(limit)
-        except ValueError:
-            limit = 10
-
+        limit = httpUtils.getIntQueryParam(request, "limit", 10)
         if limit < 1 or limit > max_messages_limit:
             limit = 10
         
-        offset = request.query_params.get("offset", 0)
-        try:
-            offset = int(offset)
-        except ValueError:
-            offset = 0
+        offset = httpUtils.getIntQueryParam(request, "offset", 0)
 
         messages = app.db.get_messages(chat_id, limit, offset)
 

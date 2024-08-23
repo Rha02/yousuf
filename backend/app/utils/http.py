@@ -17,6 +17,15 @@ def getAuthToken(request: Request) -> str:
     
     return auth_header.split(" ")[1]
 
+def getIntQueryParam(request: Request, param: str, defaultInt: int) -> int:
+    res = request.query_params.get(param)
+    try:
+        res = int(res)
+    except ValueError:
+        res = defaultInt
+
+    return res
+
 class ErrorResponses:
     INVALID_AUTH_TOKEN = jsonResponse({
         "error": "Invalid authorization header"
