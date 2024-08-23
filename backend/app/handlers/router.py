@@ -16,14 +16,10 @@ def create_router(app: AppConfig):
     async def login(email: str = Form(), password: str = Form()):
         user = app.db.get_user_by_email(email)
         if not user:
-            return httpUtils.jsonResponse({
-                "error": "User not found"
-            }, 404)
+            return httpUtils.ErrorResponses.USER_NOT_FOUND
         
         if not app.hashrepo.compare(password, user.password):
-            return httpUtils.jsonResponse({
-                "error": "Incorrect password"
-            }, 401)
+            return httpUtils.ErrorResponses.INCORRECT_PASSWORD
 
         auth_token = app.authrepo.create_token({
             "id": user.id,
@@ -85,13 +81,9 @@ def create_router(app: AppConfig):
 
     @router.get("/user")
     async def user(request: Request):
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return httpUtils.jsonResponse({
-                "error": "Invalid authorization header"
-            }, 401)
-        
-        auth_token = auth_header.split(" ")[1]
+        auth_token = httpUtils.getAuthToken(request)
+        if not auth_token:
+            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
         
         try:
             payload = app.authrepo.parse_token(auth_token)
@@ -104,9 +96,7 @@ def create_router(app: AppConfig):
 
         user = app.db.get_user_by_email(user_email)
         if not user:
-            return httpUtils.jsonResponse({
-                "error": "User not found"
-            }, 404)
+            return httpUtils.ErrorResponses.USER_NOT_FOUND
 
         return user
     
@@ -117,13 +107,9 @@ def create_router(app: AppConfig):
     ):
         """Upload a text file to the server"""
         # get authentication token
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return httpUtils.jsonResponse({
-                "error": "Invalid authorization header"
-            }, 401)
-        
-        auth_token = auth_header.split(" ")[1]
+        auth_token = httpUtils.getAuthToken(request)
+        if not auth_token:
+            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
 
         # get the file name
         file_name = file.filename
@@ -140,13 +126,9 @@ def create_router(app: AppConfig):
     async def chats(request: Request):
         """Get the list of chats"""
         # get authentication token
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return httpUtils.jsonResponse({
-                "error": "Invalid authorization header"
-            }, 401)
-        
-        auth_token = auth_header.split(" ")[1]
+        auth_token = httpUtils.getAuthToken(request)
+        if not auth_token:
+            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
         
         # get the user's id from the token
         try:
@@ -166,13 +148,9 @@ def create_router(app: AppConfig):
     async def create_chat(request: Request):
         """Create a new chat"""
         # get authentication token
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return httpUtils.jsonResponse({
-                "error": "Invalid authorization header"
-            }, 401)
-        
-        auth_token = auth_header.split(" ")[1]
+        auth_token = httpUtils.getAuthToken(request)
+        if not auth_token:
+            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
         
         try:
             payload = app.authrepo.parse_token(auth_token)
@@ -185,9 +163,7 @@ def create_router(app: AppConfig):
         # Check if the user exists
         user = app.db.get_user_by_id(user_id)
         if not user:
-            return httpUtils.jsonResponse({
-                "error": "User not found"
-            }, 404)
+            return httpUtils.ErrorResponses.USER_NOT_FOUND
         
         # get the chat title from the request body
         body = await request.form()
@@ -215,13 +191,9 @@ def create_router(app: AppConfig):
     async def get_messages(chat_id: str, request: Request):
         """Get message/conversation history for a chat"""
         # get authentication token
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return httpUtils.jsonResponse({
-                "error": "Invalid authorization header"
-            }, 401)
-        
-        auth_token = auth_header.split(" ")[1]
+        auth_token = httpUtils.getAuthToken(request)
+        if not auth_token:
+            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
 
         try:
             payload = app.authrepo.parse_token(auth_token)
@@ -235,14 +207,10 @@ def create_router(app: AppConfig):
         # Check if chat's user_id matches the user_id
         chat = app.db.get_chat_by_id(chat_id)
         if not chat:
-            return httpUtils.jsonResponse({
-                "error": "Chat not found"
-            }, 404)
+            return httpUtils.ErrorResponses.CHAT_NOT_FOUND
         
         if chat.user_id != user_id:
-            return httpUtils.jsonResponse({
-                "error": "Unauthorized"
-            }, 403)
+            return httpUtils.ErrorResponses.FORBIDDEN
         
         # get query parameters
         limit = request.query_params.get("limit", 10)
@@ -268,13 +236,9 @@ def create_router(app: AppConfig):
     async def message(chat_id: str, request: Request):
         """Send a message to the LLM"""
         # get authentication token
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return httpUtils.jsonResponse({
-                "error": "Invalid authorization header"
-            }, 401)
-        
-        auth_token = auth_header.split(" ")[1]
+        auth_token = httpUtils.getAuthToken(request)
+        if not auth_token:
+            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
 
         try:
             payload = app.authrepo.parse_token(auth_token)
@@ -288,14 +252,10 @@ def create_router(app: AppConfig):
         # Check if chat's user_id matches the user_id
         chat = app.db.get_chat_by_id(chat_id)
         if not chat:
-            return httpUtils.jsonResponse({
-                "error": "Chat not found"
-            }, 404)
+            return httpUtils.ErrorResponses.CHAT_NOT_FOUND
         
         if chat.user_id != user_id:
-            return httpUtils.jsonResponse({
-                "error": "Unauthorized"
-            }, 403)
+            return httpUtils.ErrorResponses.FORBIDDEN
         
         # get the message from the request body
         body = await request.form()

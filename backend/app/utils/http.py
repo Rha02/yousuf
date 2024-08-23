@@ -1,5 +1,5 @@
 import json
-from fastapi import Response
+from fastapi import Response, Request
 
 def jsonResponse(data: dict, status: int = 200) -> Response:
     return Response(
@@ -9,3 +9,27 @@ def jsonResponse(data: dict, status: int = 200) -> Response:
             "Content-Type": "application/json"
         }
     )
+
+def getAuthToken(request: Request) -> str:
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return ""
+    
+    return auth_header.split(" ")[1]
+
+class ErrorResponses:
+    INVALID_AUTH_TOKEN = jsonResponse({
+        "error": "Invalid authorization header"
+    }, 401)
+    USER_NOT_FOUND = jsonResponse({
+        "error": "User not found"
+    }, 404)
+    INCORRECT_PASSWORD = jsonResponse({
+        "error": "Incorrect password"
+    }, 401)
+    FORBIDDEN = jsonResponse({
+        "error": "Unauthorized"
+    }, 403)
+    CHAT_NOT_FOUND = jsonResponse({
+        "error": "Chat not found"
+    }, 404)
