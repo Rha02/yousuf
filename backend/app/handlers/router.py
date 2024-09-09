@@ -1,10 +1,10 @@
-import json
 from typing import Annotated
-from fastapi import APIRouter, File, Form, Response, UploadFile, Request
+from fastapi import APIRouter, File, Form, UploadFile, Request
 from app.config import AppConfig
 from app.models.user import User
 from app.models.chat import Chat
 from app.utils import http as httpUtils
+from langchain_community.document_loaders import TextLoader
 
 max_messages_limit = 50
 
@@ -99,28 +99,6 @@ def create_router(app: AppConfig):
             return httpUtils.ErrorResponses.USER_NOT_FOUND
 
         return user
-    
-    @router.post("/upload_text")
-    async def upload_file(
-        request: Request,
-        file: Annotated[UploadFile, File()]
-    ):
-        """Upload a text file to the server"""
-        # get authentication token
-        auth_token = httpUtils.getAuthToken(request)
-        if not auth_token:
-            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
-
-        # get the file name
-        file_name = file.filename
-        # get the file extension
-        file_extension = file_name.split(".")[-1]
-        
-        return {
-            "file_name": file_name,
-            "file_extension": file_extension
-        }
-
 
     @router.get("/chats")
     async def chats(request: Request):
@@ -260,5 +238,56 @@ def create_router(app: AppConfig):
         response = app.llmrepo.messageLLM(chat_id, prompt)
 
         return {"message": response}
+    
+    @router.post("/chats/{chat_id}/upload_text")
+    async def upload_file(
+        chat_id: str,
+        request: Request,
+        file: Annotated[UploadFile, File()]
+    ):
+        """Upload a text file to the server"""
+        # get authentication token
+        auth_token = httpUtils.getAuthToken(request)
+        if not auth_token:
+            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
+        
+        try:
+            payload = app.authrepo.parse_token(auth_token)
+        except Exception as e:
+            return httpUtils.jsonResponse({
+                "error": str(e)
+            }, 401)
+        
+        user_id = payload.get("id")
+
+        # Check if chat's user_id matches the user_id
+        chat = app.db.get_chat_by_id(chat_id)
+        if not chat:
+            return httpUtils.ErrorResponses.CHAT_NOT_FOUND
+        
+        if chat.user_id != user_id:
+            return httpUtils.ErrorResponses.FORBIDDEN
+
+        # get the file name
+        file_name = file.filename
+
+        # get the file extension
+        file_extension = file_name.split(".")[-1]
+
+        save_dir = "temp/"
+
+        with open(save_dir + file_name, "wb") as f:
+            f.write(file.file.read())
+
+        loader = TextLoader(save_dir + file_name)
+        docs = loader.load()
+
+        app.llmrepo.add_document(docs[0], chat_id)
+        
+        return {
+            "file_name": file_name,
+            "file_extension": file_extension
+        }
+
 
     return router
