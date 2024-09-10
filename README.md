@@ -51,14 +51,23 @@ curl --location 'https://yousuf195.azurewebsites.net/chats' \
 Get a list of messages from the chat. Use this route to fetch conversation history<br>
 `GET`: `/chats/<chat_id>`
 ```sh
-curl --location 'https://yousuf195.azurewebsites.net/chats/6685e575b659017d1370b735?limit=16&offset=0' \
+curl --location 'https://yousuf195.azurewebsites.net/chats/<chat_id>?limit=16&offset=0' \
 --header 'Authorization: Bearer <token>'
 ```
 
 ### Send Prompt
 `POST`: `/chats/<chat_id>/message`
 ```sh
-curl --location 'https://yousuf195.azurewebsites.net/chats/6685e575b659017d1370b735/message' \
+curl --location 'https://yousuf195.azurewebsites.net/chats/<chat_id>/message' \
 --header 'Authorization: Bearer <token>' \
 --form 'prompt="<enter prompt>"'
+```
+
+### Upload File
+Upload a text file to be used as a context/reference by the AI
+`POST`: `/chats/<chat_id>/upload_text`
+```sh
+curl --location 'localhost:8000/chats/<chat_id>/upload_text' \
+--header 'Authorization: Bearer <token>' \
+--form 'file=<path_to_file>'
 ```
