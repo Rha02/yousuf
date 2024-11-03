@@ -5,3 +5,4 @@ chromadb/
 coverage_re/
 .coverage
 .pytest_cache/
+poetry.lock
