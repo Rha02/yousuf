@@ -15,7 +15,7 @@ class TestDBRepository(DatabaseRepository):
             first_name="John",
             last_name="Doe",
             email=email,
-            password="hashed_password"
+            password="hash(dummy_password)"
         )
 
     
@@ -28,7 +28,7 @@ class TestDBRepository(DatabaseRepository):
             first_name="John",
             last_name="Doe",
             email="john.doe@test.loc",
-            password="hashed_password"
+            password="hash(dummy_password)"
         )
 
     
