@@ -78,8 +78,6 @@ class MongoDBRepository(DatabaseRepository):
     def get_messages(self, chat_id: str, limit: int, offset: int) -> list[Message]:
         res = self.db.message_histories.find({"SessionId": chat_id}).sort("_id", -1).skip(offset).limit(limit)
 
-        print(limit, offset)
-
         messages = []
         for message in res:
             history_json = json.loads(message["History"])
