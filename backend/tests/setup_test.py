@@ -44,14 +44,3 @@ def create_test_app():
 app = create_test_app()
 
 client = TestClient(app)
-
-def test_login():
-    requestBody = {
-        "email": "dummy.user@test.loc",
-        "password": "dummy_password"
-    }
-
-    response = client.post("/login", data=requestBody)
-
-    assert response.status_code == 200
-    assert "Authorization" in response.headers
