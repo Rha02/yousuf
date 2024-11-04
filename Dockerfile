@@ -3,7 +3,7 @@ FROM python:3.11-slim
 # Set the working directory
 WORKDIR /app
 
-COPY backend/pyproject.toml backend/poetry.lock ./
+COPY backend/pyproject.toml ./
 
 # Install poetry
 RUN pip install poetry
