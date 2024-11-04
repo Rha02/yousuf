@@ -6,7 +6,7 @@ authors = ["Rha02 <romuzus08@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.11"
+python = "3.11.*"
 uvicorn = "^0.29.0"
 fastapi = "^0.110.0"
 poetry-dotenv-plugin = "^0.2.0"
