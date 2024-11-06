@@ -165,6 +165,59 @@ def create_router(app: AppConfig):
 
         return chat
     
+    @router.post("/chats/create")
+    async def create_chat(request: Request):
+        """Create a new chat with first message"""
+        # get authentication token
+        auth_token = httpUtils.getAuthToken(request)
+        if not auth_token:
+            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
+        
+        try:
+            payload = app.authrepo.parse_token(auth_token)
+        except Exception as e:
+            return httpUtils.jsonResponse({
+                "error": str(e)
+            }, 401)
+        
+        user_id = payload.get("id")
+        # Check if the user exists
+        user = app.db.get_user_by_id(user_id)
+        if not user:
+            return httpUtils.ErrorResponses.USER_NOT_FOUND
+        
+        # get the message from the request body
+        body = await request.form()
+        prompt = body.get("prompt")
+        if not prompt:
+            return httpUtils.jsonResponse({
+                "error": "Prompt is required"
+            }, 400)
+        
+        # Create LLM query to create chat title
+        query = "Create a short chat title based on the following prompt:\n" + prompt
+        title = app.llmrepo.simple_query(query)
+
+        # create the chat
+        chat = app.db.create_chat(Chat(
+            id="",
+            user_id=user_id,
+            title=title
+        ))
+
+        if not chat:
+            return httpUtils.jsonResponse({
+                "error": "Failed to create chat"
+            }, 500)
+        
+        # send message to LLM
+        response = app.llmrepo.messageLLM(chat.id, prompt)
+
+        return {
+            "chat": chat,
+            "message": response
+        }
+    
     @router.get("/chats/{chat_id}")
     async def get_messages(chat_id: str, request: Request):
         """Get message/conversation history for a chat"""

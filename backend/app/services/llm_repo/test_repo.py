@@ -9,3 +9,6 @@ class TestLLMRepository(LLMRepository):
 
     def messageLLM(self, chat_id: str, prompt: str) -> str:
         return "dummy_response"
+    
+    def simple_query(self, query: str) -> str:
+        return "dummy_query_response"
