@@ -1,3 +1,4 @@
+import os
 from typing import Annotated
 from fastapi import APIRouter, File, Form, UploadFile, Request
 from app.config import AppConfig
@@ -328,6 +329,8 @@ def create_router(app: AppConfig):
         file_extension = file_name.split(".")[-1]
 
         save_dir = "temp/"
+
+        os.makedirs(save_dir, exist_ok=True)
 
         with open(save_dir + file_name, "wb") as f:
             f.write(file.file.read())
