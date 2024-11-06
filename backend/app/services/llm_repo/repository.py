@@ -14,3 +14,7 @@ class LLMRepository(ABC):
         """Add a document to the LLM"""
         pass
 
+    @abstractmethod
+    def simple_query(self, query: str) -> str:
+        """Query the LLM with a simple string"""
+        pass
