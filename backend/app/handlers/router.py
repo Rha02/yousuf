@@ -6,6 +6,7 @@ from app.models.user import User
 from app.models.chat import Chat
 from app.utils import http as httpUtils
 from langchain_community.document_loaders import TextLoader
+import re
 
 max_messages_limit = 50
 
@@ -15,6 +16,20 @@ def create_router(app: AppConfig):
 
     @router.post("/login")
     async def login(email: str = Form(), password: str = Form()):
+        # Email length: 1 to 256 characters
+        # Format: local@domain.com
+        # Local: Letters, digits, and special characters from ._%+-
+        # Local Length (before @): 3 to 64 characters
+        # Domain: Letters, digits, dots, and hyphens
+        # Domain Length (after @): 1 to 255 characters
+        # No consecutive dots and no whitespaces
+        # End matches top-level domain starting with . and at least two characters
+        emailPattern = r'^(?=.{1,256}$)(?=.{3,64}@.{1,255}$)(?!.*\s)(?!.*\.{2})[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.fullmatch(emailPattern, email):
+            return httpUtils.jsonResponse({
+                "error": "Invalid email"
+            }, 400)
+             
         user = app.db.get_user_by_email(email)
         if not user:
             return httpUtils.ErrorResponses.USER_NOT_FOUND
@@ -43,6 +58,35 @@ def create_router(app: AppConfig):
         email: str = Form(),
         password: str = Form()
     ):
+        # Regex explanation in login()
+        emailPattern = r'^(?=.{1,256}$)(?=.{3,64}@.{1,255}$)(?!.*\s)(?!.*\.{2})[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.fullmatch(emailPattern, email):
+            return httpUtils.jsonResponse({
+                "error": "Invalid email"
+            }, 400)
+            
+        # At least one character, one digit, and one special character from !@#$%^&*()_+=[\]{};":\\|,.<>?
+        # At least 8 characters long
+        # Cannot contain whitespaces
+        passwordPattern =  r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+=[\]{};":\\|,.<>?])(?=\S)(?=.{8,}).*$'
+        if not re.fullmatch(passwordPattern, password):
+            return httpUtils.jsonResponse({
+                "error": "Invalid password"
+            }, 400)
+            
+        # First Name & Last Name
+        # Letters only
+        # Name length: 2 to 50 characters
+        namePattern = r'^[a-zA-Z]{2,50}$'
+        if not re.fullmatch(namePattern, first_name):
+            return httpUtils.jsonResponse({
+                "error": "Invalid first name"
+            }, 400)
+        if not re.fullmatch(namePattern, last_name):
+            return httpUtils.jsonResponse({
+                "error": "Invalid last name"
+            }, 400)
+        
         try:
             hashed_password = app.hashrepo.hash(password)
         except Exception as e:
@@ -64,7 +108,7 @@ def create_router(app: AppConfig):
             return httpUtils.jsonResponse({
                 "error": str(e)
             }, 500)
-
+    
         auth_token = app.authrepo.create_token({
             "id": new_user.id,
             "email": email
