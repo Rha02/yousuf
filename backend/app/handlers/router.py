@@ -6,6 +6,7 @@ from app.models.user import User
 from app.models.chat import Chat
 from app.utils import http as httpUtils
 from langchain_community.document_loaders import TextLoader
+import re
 
 max_messages_limit = 50
 
@@ -15,6 +16,20 @@ def create_router(app: AppConfig):
 
     @router.post("/login")
     async def login(email: str = Form(), password: str = Form()):
+        # Email length: 1 to 256 characters
+        # Format: local@domain.com
+        # Local: Letters, digits, and special characters from ._%+-
+        # Local Length (before @): 3 to 64 characters
+        # Domain: Letters, digits, dots, and hyphens
+        # Domain Length (after @): 1 to 255 characters
+        # No consecutive dots and no whitespaces
+        # End matches top-level domain starting with . and at least two characters
+        emailPattern = r'^(?=.{1,256}$)(?=.{3,64}@.{1,255}$)(?!.*\s)(?!.*\.{2})[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.fullmatch(emailPattern, email):
+            return httpUtils.jsonResponse({
+                "error": "Invalid email"
+            }, 400)
+             
         user = app.db.get_user_by_email(email)
         if not user:
             return httpUtils.ErrorResponses.USER_NOT_FOUND
