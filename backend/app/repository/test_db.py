@@ -33,8 +33,8 @@ class TestDBRepository(DatabaseRepository):
 
     
     def create_user(self, user: User) -> User | None:
-        if user.email == "error":
-            return None
+        if user.email == "CreateUserError@test.loc":
+            raise Exception("Creating error failed")
         
         return User(
             id="1",
