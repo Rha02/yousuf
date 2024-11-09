@@ -7,7 +7,7 @@ class TestDBRepository(DatabaseRepository):
     """Mock class for database repository"""
     
     def get_user_by_email(self, email: str) -> User | None:
-        if email == "error":
+        if email == "notfound@test.com":
             return None
         
         return User(
@@ -15,7 +15,7 @@ class TestDBRepository(DatabaseRepository):
             first_name="John",
             last_name="Doe",
             email=email,
-            password="hash(dummy_password)"
+            password="hash(#dummy_password123)"
         )
 
     
@@ -28,13 +28,13 @@ class TestDBRepository(DatabaseRepository):
             first_name="John",
             last_name="Doe",
             email="john.doe@test.loc",
-            password="hash(dummy_password)"
+            password="hash(#dummy_password123)"
         )
 
     
     def create_user(self, user: User) -> User | None:
-        if user.email == "error":
-            return None
+        if user.email == "CreateUserError@test.loc":
+            raise Exception("Creating error failed")
         
         return User(
             id="1",
