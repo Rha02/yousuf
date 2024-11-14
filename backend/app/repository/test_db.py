@@ -1,5 +1,6 @@
 from app.models.chat import Chat
 from app.models.message import History, Message, MessageData
+from app.models.uploaded_file import UploadedFile
 from app.models.user import User
 from .repository import DatabaseRepository
 
@@ -106,5 +107,38 @@ class TestDBRepository(DatabaseRepository):
                         content="Bot message"
                     )
                 )
+            )
+        ]
+    
+    def create_file(self, file: UploadedFile) -> UploadedFile | None:
+        return UploadedFile(
+            id="1",
+            chat_id=file.chat_id,
+            file_name=file.file_name,
+            file_size=file.file_size,
+            file_type=file.file_type,
+            uploaded_at=file.uploaded_at
+        )
+    
+    def get_files(self, chat_id: str) -> list[UploadedFile]:
+        if chat_id == "error":
+            return []
+        
+        return [
+            UploadedFile(
+                id="1",
+                chat_id=chat_id,
+                file_name="file1.txt",
+                file_size=100,
+                file_type="text/plain",
+                uploaded_at="2021-01-01 12:00:00"
+            ),
+            UploadedFile(
+                id="2",
+                chat_id=chat_id,
+                file_name="file2.txt",
+                file_size=200,
+                file_type="text/plain",
+                uploaded_at="2021-01-01 12:00:00"
             )
         ]

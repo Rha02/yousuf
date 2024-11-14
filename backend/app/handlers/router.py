@@ -1,5 +1,7 @@
+import datetime
 import os
 from typing import Annotated
+from app.models.uploaded_file import UploadedFile
 from fastapi import APIRouter, File, Form, UploadFile, Request
 from app.config import AppConfig
 from app.models.user import User
@@ -379,15 +381,55 @@ def create_router(app: AppConfig):
         with open(save_dir + file_name, "wb") as f:
             f.write(file.file.read())
 
-        loader = TextLoader(save_dir + file_name)
+        # Add the file metadata to the database
+        uploaded_file = app.db.create_file(
+            UploadedFile(
+                id="",
+                chat_id=chat_id,
+                file_name=file_name,
+                file_size=os.path.getsize(save_dir + file_name),
+                file_type=file_extension,
+                uploaded_at=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            )
+        )
+
+        loader = TextLoader(save_dir + file_name, encoding="utf-8")
         docs = loader.load()
 
         app.llmrepo.add_document(docs[0], chat_id)
-        
-        return {
-            "file_name": file_name,
-            "file_extension": file_extension
-        }
 
+        # remove the file
+        os.remove(save_dir + file_name)
+        
+        return uploaded_file
+    
+    @router.get("/chats/{chat_id}/uploaded_texts")
+    async def get_texts(chat_id: str, request: Request):
+        """Get the list of uploaded texts"""
+        # get authentication token
+        auth_token = httpUtils.getAuthToken(request)
+        if not auth_token:
+            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
+        
+        try:
+            payload = app.authrepo.parse_token(auth_token)
+        except Exception as e:
+            return httpUtils.jsonResponse({
+                "error": str(e)
+            }, 401)
+        
+        user_id = payload.get("id")
+
+        # Check if chat's user_id matches the user_id
+        chat = app.db.get_chat_by_id(chat_id)
+        if not chat:
+            return httpUtils.ErrorResponses.CHAT_NOT_FOUND
+        
+        if chat.user_id != user_id:
+            return httpUtils.ErrorResponses.FORBIDDEN
+
+        docs = app.db.get_files(chat_id)
+
+        return docs
 
     return router
