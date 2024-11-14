@@ -1,5 +1,6 @@
 import json
 from app.models.message import History, Message, MessageData
+from app.models.uploaded_file import UploadedFile
 from .repository import DatabaseRepository
 from app.models.user import User
 from app.models.chat import Chat
@@ -89,3 +90,24 @@ class MongoDBRepository(DatabaseRepository):
             ))
 
         return messages
+    
+    def create_file(self, uploaded_file: UploadedFile) -> UploadedFile | None:
+        res = self.db.uploaded_files.insert_one(uploaded_file.model_dump())
+        uploaded_file.id = str(res.inserted_id)
+        return uploaded_file
+
+    def get_files(self, chat_id: str) -> list[UploadedFile]:
+        res = self.db.uploaded_files.find({"chat_id": chat_id})
+        files = []
+
+        for uf in res:
+            files.append(UploadedFile(
+                id=str(uf["_id"]),
+                chat_id=uf["chat_id"],
+                file_name=uf["file_name"],
+                file_size=uf["file_size"],
+                file_type=uf["file_type"],
+                uploaded_at=uf["uploaded_at"]
+            ))
+        
+        return files

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from app.models.uploaded_file import UploadedFile
 from app.models.user import User
 from app.models.chat import Chat
 from app.models.message import Message
@@ -32,4 +33,12 @@ class DatabaseRepository(ABC):
 
     @abstractmethod
     def get_messages(self, chat_id: str, limit: int, offset: int) -> list[Message]:
+        pass
+
+    @abstractmethod
+    def create_file(self, file: UploadedFile) -> UploadedFile | None:
+        pass
+
+    @abstractmethod
+    def get_files(self, chat_id: str) -> list[UploadedFile]:
         pass
