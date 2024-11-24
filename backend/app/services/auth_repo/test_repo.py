@@ -14,6 +14,12 @@ class TestAuthTokenRepository(AuthTokenRepository):
     def parse_token(self, token: str) -> dict:
         if token == "bad_token":
             raise Exception("Invalid token")
+        
+        if token == "nonexistent_user_token":
+            return {
+                "id": 1,
+                "email": "notfound@test.com",
+            }
 
         return {
             "id": 1,
