@@ -2,7 +2,7 @@ import datetime
 import os
 from typing import Annotated
 from app.models.uploaded_file import UploadedFile
-from fastapi import APIRouter, File, Form, UploadFile, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, Request
 from app.config import AppConfig
 from app.models.user import User
 from app.models.chat import Chat
@@ -15,6 +15,22 @@ max_messages_limit = 50
 def create_router(app: AppConfig):
     """Create an instance of the FastAPI application"""
     router = APIRouter()
+
+    # Middleware to get the user id from the authentication token
+    def get_auth_user_id(request: Request) -> str:
+        auth_token = httpUtils.getAuthToken(request)
+        if not auth_token:
+            raise httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
+        
+        try:
+            payload = app.authrepo.parse_token(auth_token)
+        except Exception as e:
+            raise HTTPException(
+                status_code=401,
+                detail=str(e)
+            )
+
+        return payload.get("id")
 
     @router.post("/login")
     async def login(email: str = Form(), password: str = Form()):
@@ -127,64 +143,23 @@ def create_router(app: AppConfig):
         return {"message": "Logout"}
 
     @router.get("/user")
-    async def user(request: Request):
-        auth_token = httpUtils.getAuthToken(request)
-        if not auth_token:
-            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
-        
-        try:
-            payload = app.authrepo.parse_token(auth_token)
-        except Exception as e:
-            return httpUtils.jsonResponse({
-                "error": str(e)
-            }, 401)
-
-        user_email = payload.get("email")
-
-        user = app.db.get_user_by_email(user_email)
+    async def user(user_id: str = Depends(get_auth_user_id)):
+        user = app.db.get_user_by_id(user_id)
         if not user:
             return httpUtils.ErrorResponses.USER_NOT_FOUND
 
         return user
 
     @router.get("/chats")
-    async def chats(request: Request):
+    async def chats(user_id: str = Depends(get_auth_user_id)):
         """Get the list of chats"""
-        # get authentication token
-        auth_token = httpUtils.getAuthToken(request)
-        if not auth_token:
-            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
-        
-        # get the user's id from the token
-        try:
-            payload = app.authrepo.parse_token(auth_token)
-        except Exception as e:
-            return httpUtils.jsonResponse({
-                "error": str(e)
-            }, 401)
-        
-        user_id = payload.get("id")
-
         chats = app.db.get_chats(user_id)
 
         return chats
 
     @router.post("/chats")
-    async def create_chat(request: Request):
+    async def create_chat(request: Request, user_id: str = Depends(get_auth_user_id)):
         """Create a new chat"""
-        # get authentication token
-        auth_token = httpUtils.getAuthToken(request)
-        if not auth_token:
-            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
-        
-        try:
-            payload = app.authrepo.parse_token(auth_token)
-        except Exception as e:
-            return httpUtils.jsonResponse({
-                "error": str(e)
-            }, 401)
-        
-        user_id = payload.get("id")
         # Check if the user exists
         user = app.db.get_user_by_id(user_id)
         if not user:
@@ -213,21 +188,8 @@ def create_router(app: AppConfig):
         return chat
     
     @router.post("/chats/create")
-    async def create_chat(request: Request):
+    async def create_chat(request: Request, user_id: str = Depends(get_auth_user_id)):
         """Create a new chat with first message"""
-        # get authentication token
-        auth_token = httpUtils.getAuthToken(request)
-        if not auth_token:
-            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
-        
-        try:
-            payload = app.authrepo.parse_token(auth_token)
-        except Exception as e:
-            return httpUtils.jsonResponse({
-                "error": str(e)
-            }, 401)
-        
-        user_id = payload.get("id")
         # Check if the user exists
         user = app.db.get_user_by_id(user_id)
         if not user:
@@ -266,22 +228,8 @@ def create_router(app: AppConfig):
         }
     
     @router.get("/chats/{chat_id}")
-    async def get_messages(chat_id: str, request: Request):
+    async def get_messages(chat_id: str, request: Request, user_id: str = Depends(get_auth_user_id)):
         """Get message/conversation history for a chat"""
-        # get authentication token
-        auth_token = httpUtils.getAuthToken(request)
-        if not auth_token:
-            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
-
-        try:
-            payload = app.authrepo.parse_token(auth_token)
-        except Exception as e:
-            return httpUtils.jsonResponse({
-                "error": str(e)
-            }, 401)
-        
-        user_id = payload.get("id")
-
         # Check if chat's user_id matches the user_id
         chat = app.db.get_chat_by_id(chat_id)
         if not chat:
@@ -302,22 +250,8 @@ def create_router(app: AppConfig):
         return messages
 
     @router.post("/chats/{chat_id}/message")
-    async def message(chat_id: str, request: Request):
+    async def message(chat_id: str, request: Request, user_id: str = Depends(get_auth_user_id)):
         """Send a message to the LLM"""
-        # get authentication token
-        auth_token = httpUtils.getAuthToken(request)
-        if not auth_token:
-            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
-
-        try:
-            payload = app.authrepo.parse_token(auth_token)
-        except Exception as e:
-            return httpUtils.jsonResponse({
-                "error": str(e)
-            }, 401)
-        
-        user_id = payload.get("id")
-
         # Check if chat's user_id matches the user_id
         chat = app.db.get_chat_by_id(chat_id)
         if not chat:
@@ -343,22 +277,10 @@ def create_router(app: AppConfig):
     async def upload_file(
         chat_id: str,
         request: Request,
-        file: Annotated[UploadFile, File()]
+        file: Annotated[UploadFile, File()],
+        user_id: str = Depends(get_auth_user_id)
     ):
         """Upload a text file to the server"""
-        # get authentication token
-        auth_token = httpUtils.getAuthToken(request)
-        if not auth_token:
-            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
-        
-        try:
-            payload = app.authrepo.parse_token(auth_token)
-        except Exception as e:
-            return httpUtils.jsonResponse({
-                "error": str(e)
-            }, 401)
-        
-        user_id = payload.get("id")
 
         # Check if chat's user_id matches the user_id
         chat = app.db.get_chat_by_id(chat_id)
@@ -404,21 +326,8 @@ def create_router(app: AppConfig):
         return uploaded_file
     
     @router.get("/chats/{chat_id}/uploaded_texts")
-    async def get_texts(chat_id: str, request: Request):
+    async def get_texts(chat_id: str, user_id: str = Depends(get_auth_user_id)):
         """Get the list of uploaded texts"""
-        # get authentication token
-        auth_token = httpUtils.getAuthToken(request)
-        if not auth_token:
-            return httpUtils.ErrorResponses.INVALID_AUTH_TOKEN
-        
-        try:
-            payload = app.authrepo.parse_token(auth_token)
-        except Exception as e:
-            return httpUtils.jsonResponse({
-                "error": str(e)
-            }, 401)
-        
-        user_id = payload.get("id")
 
         # Check if chat's user_id matches the user_id
         chat = app.db.get_chat_by_id(chat_id)
