@@ -17,11 +17,11 @@ class TestAuthTokenRepository(AuthTokenRepository):
         
         if token == "nonexistent_user_token":
             return {
-                "id": 1,
+                "id": "error",
                 "email": "notfound@test.com",
             }
 
         return {
-            "id": 1,
+            "id": "1",
             "email": "dummy.email@test.loc",
         }

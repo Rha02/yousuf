@@ -5,7 +5,7 @@ def test_no_auth_token():
     
     assert response.status_code == 401
     assert response.json() == {
-        "error": "Invalid authorization header"
+        "detail": "Invalid authorization header"
     }
 
 def test_bad_auth_token():
@@ -15,7 +15,7 @@ def test_bad_auth_token():
 
     assert response.status_code == 401
     assert response.json() == {
-        "error": "Invalid token"
+        "detail": "Invalid token"
     }
 
 def test_user_not_found():

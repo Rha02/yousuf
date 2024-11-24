@@ -28,7 +28,7 @@ class TestDBRepository(DatabaseRepository):
             id=user_id,
             first_name="John",
             last_name="Doe",
-            email="john.doe@test.loc",
+            email="dummy.email@test.loc",
             password="hash(#dummy_password123)"
         )
 

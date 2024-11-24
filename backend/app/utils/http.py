@@ -1,5 +1,5 @@
 import json
-from fastapi import Response, Request
+from fastapi import HTTPException, Response, Request
 
 def jsonResponse(data: dict, status: int = 200) -> Response:
     return Response(
@@ -29,9 +29,10 @@ def getIntQueryParam(request: Request, param: str, defaultInt: int) -> int:
     return res
 
 class ErrorResponses:
-    INVALID_AUTH_TOKEN = jsonResponse({
-        "error": "Invalid authorization header"
-    }, 401)
+    INVALID_AUTH_TOKEN = HTTPException(
+        status_code=401,
+        detail="Invalid authorization header"
+    )
     USER_NOT_FOUND = jsonResponse({
         "error": "User not found"
     }, 404)
