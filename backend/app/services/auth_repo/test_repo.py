@@ -20,6 +20,12 @@ class TestAuthTokenRepository(AuthTokenRepository):
                 "id": "error",
                 "email": "notfound@test.com",
             }
+        
+        if token == "dummy_other_user_token":
+            return {
+                "id": "2",
+                "email": "dummy2.email@test.loc",
+            }
 
         return {
             "id": "1",

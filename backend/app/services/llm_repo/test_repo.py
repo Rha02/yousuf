@@ -11,4 +11,9 @@ class TestLLMRepository(LLMRepository):
         return "dummy_response"
     
     def simple_query(self, query: str) -> str:
+        errorQuery = "Create a short chat title based on the following prompt:\nsimple_query_error"
+
+        if query == errorQuery:
+            return "error"
+
         return "dummy_query_response"
