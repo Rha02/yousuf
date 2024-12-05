@@ -1,4 +1,5 @@
 from tests.setup_test import client
+from datetime import datetime
 
 def test_user_not_found():
     response = client.post("/chats", headers={
@@ -49,7 +50,8 @@ def test_create_chat_ok():
     assert response.json() == {
         "id": "1",
         "title": "Chat 3",
-        "user_id": "1"
+        "user_id": "1",
+        "last_messaged_at": datetime.strptime("2021-01-01 12:00:00", "%Y-%m-%d %H:%M:%S").isoformat()
     }
 
 def test_create_chat_from_prompt_user_not_found():
@@ -102,7 +104,8 @@ def test_create_chat_from_prompt_ok():
         "chat": {
             "id": "1",
             "title": "dummy_query_response",
-            "user_id": "1"
+            "user_id": "1",
+            "last_messaged_at": datetime.strptime("2021-01-01 12:00:00", "%Y-%m-%d %H:%M:%S").isoformat()
         },
         "message": "dummy_response"
     }
