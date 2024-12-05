@@ -6,6 +6,7 @@ from app.models.user import User
 from app.models.chat import Chat
 from driver.driver import MongoDB
 from bson import ObjectId
+from datetime import datetime, timezone
 
 class MongoDBRepository(DatabaseRepository):
     """MongoDB implementation of a database repository"""
@@ -47,14 +48,16 @@ class MongoDBRepository(DatabaseRepository):
         return user
     
     def get_chats(self, user_id: str) -> list[Chat]:
-        res = self.db.chats.find({"user_id": user_id})
+        # Get all chats sorted by last_messaged_at
+        res = self.db.chats.find({"user_id": user_id}).sort("last_messaged_at", -1)
         chats = []
 
         for chat in res:
             chats.append(Chat(
                 id=str(chat["_id"]),
                 user_id=chat["user_id"],
-                title=chat["title"]
+                title=chat["title"],
+                last_messaged_at=chat["last_messaged_at"]
             ))
         
         return chats
@@ -67,7 +70,8 @@ class MongoDBRepository(DatabaseRepository):
         chat = Chat(
             id=str(res["_id"]),
             user_id=res["user_id"],
-            title=res["title"]
+            title=res["title"],
+            last_messaged_at=res["last_messaged_at"]
         )
         return chat
     
@@ -111,3 +115,7 @@ class MongoDBRepository(DatabaseRepository):
             ))
         
         return files
+    
+    def update_chat_last_messaged_at(self, chat_id: str) -> bool:
+        res = self.db.chats.update_one({"_id": ObjectId(chat_id)}, {"$set": {"last_messaged_at": datetime.now(timezone.utc)}})
+        return res.modified_count > 0

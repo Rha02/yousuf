@@ -51,7 +51,7 @@ def main():
     chat_validator = {
         "$jsonSchema": {
             "bsonType": "object",
-            "required": ["title", "user_id"],
+            "required": ["title", "user_id", "last_messaged_at"],
             "properties": {
                 "title": {
                     "bsonType": "string",
@@ -60,6 +60,10 @@ def main():
                 "user_id": {
                     "bsonType": "string",
                     "description": "must be a string and is required"
+                },
+                "last_messaged_at": {
+                    "bsonType": "date",
+                    "description": "must be a date and is required"
                 }
             }
         }

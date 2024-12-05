@@ -1,3 +1,4 @@
+import datetime
 from app.models.chat import Chat
 from app.models.message import History, Message, MessageData
 from app.models.uploaded_file import UploadedFile
@@ -51,12 +52,14 @@ class TestDBRepository(DatabaseRepository):
             Chat(
                 id="1",
                 title="Chat 1",
-                user_id=user_id
+                user_id=user_id,
+                last_messaged_at=datetime.datetime.strptime("2021-01-01 12:00:00", "%Y-%m-%d %H:%M:%S")
             ),
             Chat(
                 id="2",
                 title="Chat 2",
-                user_id=user_id
+                user_id=user_id,
+                last_messaged_at=datetime.datetime.strptime("2021-01-01 12:00:00", "%Y-%m-%d %H:%M:%S")
             )
         ]
 
@@ -68,7 +71,8 @@ class TestDBRepository(DatabaseRepository):
         return Chat(
             id=chat_id,
             title="Chat",
-            user_id="1"
+            user_id="1",
+            last_messaged_at=datetime.datetime.strptime("2021-01-01 12:00:00", "%Y-%m-%d %H:%M:%S")
         )
 
     
@@ -79,7 +83,8 @@ class TestDBRepository(DatabaseRepository):
         return Chat(
             id="1",
             title=chat.title,
-            user_id=chat.user_id
+            user_id=chat.user_id,
+            last_messaged_at=datetime.datetime.strptime("2021-01-01 12:00:00", "%Y-%m-%d %H:%M:%S")
         )
 
     
@@ -142,3 +147,6 @@ class TestDBRepository(DatabaseRepository):
                 uploaded_at="2021-01-01 12:00:00"
             )
         ]
+    
+    def update_chat_last_messaged_at(self, chat_id: str) -> bool:
+        return True

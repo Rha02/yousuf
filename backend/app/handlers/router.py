@@ -177,7 +177,8 @@ def create_router(app: AppConfig):
         chat = app.db.create_chat(Chat(
             id="",
             user_id=user_id,
-            title=title
+            title=title,
+            last_messaged_at=datetime.datetime.now(datetime.timezone.utc)
         ))
 
         if not chat:
@@ -211,7 +212,8 @@ def create_router(app: AppConfig):
         chat = app.db.create_chat(Chat(
             id="",
             user_id=user_id,
-            title=title
+            title=title,
+            last_messaged_at=datetime.datetime.now(datetime.timezone.utc)
         ))
 
         if not chat:
@@ -271,6 +273,9 @@ def create_router(app: AppConfig):
         # send the message to the LLM
         response = app.llmrepo.messageLLM(chat_id, prompt)
 
+        # update the last_messaged_at field in the chat
+        chat = app.db.update_chat_last_messaged_at(chat_id)
+
         return {"message": response}
     
     @router.post("/chats/{chat_id}/upload_text")
@@ -311,7 +316,7 @@ def create_router(app: AppConfig):
                 file_name=file_name,
                 file_size=os.path.getsize(save_dir + file_name),
                 file_type=file_extension,
-                uploaded_at=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                uploaded_at=datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
             )
         )
 

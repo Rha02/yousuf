@@ -3,6 +3,7 @@ from app.models.uploaded_file import UploadedFile
 from app.models.user import User
 from app.models.chat import Chat
 from app.models.message import Message
+from datetime import datetime
 
 class DatabaseRepository(ABC):
     """Abstract class for database repository"""
@@ -41,4 +42,8 @@ class DatabaseRepository(ABC):
 
     @abstractmethod
     def get_files(self, chat_id: str) -> list[UploadedFile]:
+        pass
+
+    @abstractmethod
+    def update_chat_last_messaged_at(self, chat_id: str) -> bool:
         pass
