@@ -1,6 +1,9 @@
 # YouSuf - Your Personalized Voice Assistant
 YouSuf is a chatbot project I and my team are building for our senior design project.
 
+## Note
+App is no longer deployed
+
 ## API Doc
 #### Login
 `POST`: `/login`<br>
